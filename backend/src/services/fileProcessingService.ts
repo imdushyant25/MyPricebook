@@ -237,7 +237,9 @@ const storeValidRecord = async (
   if (record.metadata.EXPIRYDATE) {
     expiryDate = new Date(record.metadata.EXPIRYDATE);
   }
-  // Note: NULL expiryDate in PostgreSQL will be handled as 'infinity' based on your DB schema
+  
+  // Transform flat values into hierarchical structure
+  const structuredValues = structureProductValues(values);
   
   // Insert into products table
   const productQuery = `
@@ -261,7 +263,7 @@ const storeValidRecord = async (
   
   const productId = productResult.rows[0].id;
   
-  // Insert into product_values table
+  // Insert structured values into product_values table
   const valuesQuery = `
     INSERT INTO edpm.product_values (
       product_id,
@@ -274,12 +276,154 @@ const storeValidRecord = async (
   
   await client.query(valuesQuery, [
     productId,
-    JSON.stringify(values),
+    JSON.stringify(structuredValues),
     now
   ]);
   
   return productId;
 };
+
+/**
+ * Transform flat product values into a hierarchical structure
+ * @param flatValues Object with flat value keys like "Retail|Brand|Discount"
+ * @returns Hierarchical structure matching the expected JSON format
+ */
+function structureProductValues(flatValues: {[key: string]: any}) {
+  console.log("Structuring product values from:", JSON.stringify(flatValues, null, 2));
+  
+  // Initialize the structure based on the expected JSON format
+  const structuredValues: any = {
+    overallFeeAndCredit: {
+      pepmRebateCredit: null,
+      pricingFee: null,
+      inHousePharmacyFee: null
+    },
+    retail: {
+      brand: { discount: null, dispensingFee: null, rebate: null },
+      generic: { discount: null, dispensingFee: null }
+    },
+    retail90: {
+      brand: { discount: null, dispensingFee: null, rebate: null },
+      generic: { discount: null, dispensingFee: null }
+    },
+    maintenance: {
+      brand: { discount: null, dispensingFee: null, rebate: null },
+      generic: { discount: null, dispensingFee: null }
+    },
+    mail: {
+      brand: { discount: null, dispensingFee: null, rebate: null },
+      generic: { discount: null, dispensingFee: null }
+    },
+    specialtyMail: {
+      brand: { discount: null, dispensingFee: null, rebate: null },
+      generic: { discount: null, dispensingFee: null }
+    },
+    specialtyRetail: {
+      brand: { discount: null, dispensingFee: null, rebate: null },
+      generic: { discount: null, dispensingFee: null }
+    },
+    limitedDistributionMail: {
+      brand: { discount: null, dispensingFee: null, rebate: null },
+      generic: { discount: null, dispensingFee: null }
+    },
+    limitedDistributionRetail: {
+      brand: { discount: null, dispensingFee: null, rebate: null },
+      generic: { discount: null, dispensingFee: null }
+    },
+    blendedSpecialty: {
+      ldd: { discount: null, dispensingFee: null, rebate: null },
+      nonLdd: { discount: null, dispensingFee: null, rebate: null }
+    }
+  };
+
+  // Handle flat structure first (legacy support)
+  if (flatValues.DISCOUNT !== undefined) {
+    console.log("Found generic DISCOUNT field:", flatValues.DISCOUNT);
+    structuredValues.retail.brand.discount = flatValues.DISCOUNT;
+  }
+  
+  if (flatValues.REBATE !== undefined) {
+    console.log("Found generic REBATE field:", flatValues.REBATE);
+    structuredValues.retail.brand.rebate = flatValues.REBATE;
+  }
+  
+  if (flatValues["DISPENSING FEE"] !== undefined) {
+    console.log("Found generic DISPENSING FEE field:", flatValues["DISPENSING FEE"]);
+    structuredValues.retail.brand.dispensingFee = flatValues["DISPENSING FEE"];
+  }
+
+  // Map for category names to structure keys
+  const categoryMapping: {[key: string]: string} = {
+    'Overall Fee & Credit': 'overallFeeAndCredit',
+    'Retail': 'retail',
+    'Retail 90': 'retail90',
+    'Maintenance': 'maintenance',
+    'Mail': 'mail',
+    'Specialty Mail': 'specialtyMail',
+    'Specialty Retail': 'specialtyRetail',
+    'Limited Distribution Mail': 'limitedDistributionMail',
+    'Limited Distribution Retail': 'limitedDistributionRetail',
+    'LDD Blended Specialty': 'blendedSpecialty.ldd',
+    'Non-LDD Blended Specialty': 'blendedSpecialty.nonLdd'
+  };
+
+  // Map for field types to structure properties
+  const fieldTypeMapping: {[key: string]: string} = {
+    'DISCOUNT': 'discount',
+    'DISPENSING FEE': 'dispensingFee',
+    'REBATE': 'rebate',
+    'PEPM REBATE CREDIT': 'pepmRebateCredit',
+    'PRICING FEE': 'pricingFee',
+    'INHOUSE PHARMACY FEE': 'inHousePharmacyFee'
+  };
+
+  // Process structured keys like "Retail|Brand|Discount"
+  for (const [key, value] of Object.entries(flatValues)) {
+    // Skip null or empty values
+    if (value === null || value === undefined || value === '') {
+      continue;
+    }
+
+    // Handle structured keys
+    if (key.includes('|')) {
+      const [category, subcategory, fieldType] = key.split('|');
+      console.log(`Processing structured key: ${category} | ${subcategory} | ${fieldType} = ${value}`);
+
+      const categoryKey = categoryMapping[category.trim()];
+      if (!categoryKey) {
+        console.warn(`Unknown category: ${category}`);
+        continue;
+      }
+
+      const fieldTypeKey = fieldTypeMapping[fieldType.trim().toUpperCase()];
+      if (!fieldTypeKey) {
+        console.warn(`Unknown field type: ${fieldType}`);
+        continue;
+      }
+
+      // Handle special case of blended specialty which has a dot in the path
+      if (categoryKey.includes('.')) {
+        const [mainCategory, subCategory] = categoryKey.split('.');
+        structuredValues[mainCategory][subCategory][fieldTypeKey] = value;
+        console.log(`Set ${mainCategory}.${subCategory}.${fieldTypeKey} = ${value}`);
+      } 
+      // Handle special case of overall fees which don't have subcategories
+      else if (category.trim() === 'Overall Fee & Credit') {
+        structuredValues[categoryKey][fieldTypeKey] = value;
+        console.log(`Set ${categoryKey}.${fieldTypeKey} = ${value}`);
+      }
+      // Normal case with subcategory
+      else {
+        const subcategoryKey = subcategory.trim().toLowerCase();
+        structuredValues[categoryKey][subcategoryKey][fieldTypeKey] = value;
+        console.log(`Set ${categoryKey}.${subcategoryKey}.${fieldTypeKey} = ${value}`);
+      }
+    }
+  }
+
+  console.log("Final structured values:", JSON.stringify(structuredValues, null, 2));
+  return structuredValues;
+}
 
 /**
  * Store rejection log for an invalid record

@@ -16,12 +16,39 @@ export const parseExcelBuffer = async (buffer: Buffer | any): Promise<any[]> => 
     if (!worksheet) {
       throw new Error('Excel file does not contain any worksheets');
     }
+
+    // This Excel has a complex header structure:
+    // Row 1: Overall categories (Overall Fee & Credit, Retail, etc.)
+    // Row 2: Subcategories (Brand, Generic)
+    // Row 3: Actual value types (Discount, Dispensing Fee, Rebate)
     
-    // Get headers - assume they're in row 3 based on the sample provided
+    // Get category headers (row 1)
+    const categoryHeaders: { [key: number]: string } = {};
+    worksheet.getRow(1).eachCell((cell, colNumber) => {
+      const headerText = cell.value?.toString().trim() || '';
+      if (headerText) {
+        categoryHeaders[colNumber] = headerText;
+      }
+    });
+    
+    // Get subcategory headers (row 2)
+    const subcategoryHeaders: { [key: number]: string } = {};
+    worksheet.getRow(2).eachCell((cell, colNumber) => {
+      const headerText = cell.value?.toString().trim() || '';
+      if (headerText) {
+        subcategoryHeaders[colNumber] = headerText;
+      }
+    });
+
+    // Get field headers (row 3) and categorize by prefix
     const headers: { [key: number]: string } = {};
     const metadataFields: { [key: number]: string } = {};
     const parameterFields: { [key: number]: string } = {};
-    const productValueFields: { [key: number]: string } = {};
+    const productValueFields: { [key: number]: { 
+      category: string, 
+      subcategory: string, 
+      fieldType: string 
+    } } = {};
     
     worksheet.getRow(3).eachCell((cell, colNumber) => {
       const headerText = cell.value?.toString().trim() || '';
@@ -35,7 +62,18 @@ export const parseExcelBuffer = async (buffer: Buffer | any): Promise<any[]> => 
         } else if (headerUpper.startsWith('PARAMETER_')) {
           parameterFields[colNumber] = headerUpper.substring(10); // Remove 'PARAMETER_' prefix
         } else if (headerUpper.startsWith('PRODUCTVALUE_')) {
-          productValueFields[colNumber] = headerUpper.substring(13); // Remove 'PRODUCTVALUE_' prefix
+          // For product values, keep track of category and subcategory
+          const fieldType = headerUpper.substring(13); // Remove 'PRODUCTVALUE_' prefix
+          const category = categoryHeaders[colNumber] || '';
+          const subcategory = subcategoryHeaders[colNumber] || '';
+          
+          productValueFields[colNumber] = {
+            category,
+            subcategory,
+            fieldType
+          };
+          
+          console.log(`Mapped ProductValue column ${colNumber}: ${category} > ${subcategory} > ${fieldType}`);
         }
       }
     });
@@ -65,16 +103,11 @@ export const parseExcelBuffer = async (buffer: Buffer | any): Promise<any[]> => 
         
         if (originalHeader) {
           // Convert cell value to appropriate type
-          let value = cell.value;
+          let value: any = cell.value;
           
           // Handle date cells
           if (cell.type === ExcelJS.ValueType.Date && value instanceof Date) {
             value = value.toISOString().split('T')[0]; // Format as YYYY-MM-DD
-          }
-          
-          // Handle numeric values with % symbol
-          if (typeof value === 'string' && value.endsWith('%')) {
-            value = parseFloat(value.replace('%', '')) / 100;
           }
           
           // Add value to the appropriate category based on the header prefix
@@ -91,9 +124,26 @@ export const parseExcelBuffer = async (buffer: Buffer | any): Promise<any[]> => 
             record.parameters[fieldName] = value;
             hasData = true;
           } else if (headerUpper.startsWith('PRODUCTVALUE_')) {
-            const fieldName = productValueFields[colNumber];
-            record.values[fieldName] = value;
+            // For product values, use the complex header mapping
+            const valueInfo = productValueFields[colNumber];
+            
+            // Process numeric values
+            if (typeof value === 'number' || (typeof value === 'string' && !isNaN(parseFloat(value)))) {
+              // Convert to number
+              value = typeof value === 'string' ? parseFloat(value) : value;
+            }
+            
+            // Handle percentage values (convert "10%" to 0.1)
+            if (typeof value === 'string' && value.toString().endsWith('%')) {
+              value = parseFloat(value.toString().replace('%', '')) / 100;
+            }
+            
+            // Create a structured key based on category, subcategory, and field type
+            const structuredKey = `${valueInfo.category}|${valueInfo.subcategory}|${valueInfo.fieldType}`;
+            record.values[structuredKey] = value;
             hasData = true;
+            
+            console.log(`Row ${rowNumber} - Added product value: ${structuredKey} = ${value}`);
           }
         }
       });

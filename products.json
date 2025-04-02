@@ -1,0 +1,148 @@
+{
+    "metadata": {
+      "id": "product-123",
+      "effectiveDate": "2024-05-01",
+      "expiryDate": "2025-04-30",
+      "priceRecordName": "Standard Pharmacy Plan 2024",
+      "createdAt": "2024-04-15T10:30:00Z",
+      "createdBy": "john.doe@example.com",
+      "updatedAt": "2024-04-15T10:30:00Z",
+      "updatedBy": "john.doe@example.com"
+    },
+    "parameters": {
+      "pharmacyBenefitsManager": "Express Scripts",
+      "confirmedWithPBM": "Committed",
+      "customPricing": "No",
+      "customPricingNote": "N/A",
+      "contractDuration": "1 year",
+      "timeInContract": "Year 1 of 1",
+      "clientSize": "10000-20000",
+      "employerStatusToRxBenefits": "Existing",
+      "employerStatusToPBM": "New Business",
+      "hospitalPricing": "No",
+      "companyHeadQuarterState": "CA",
+      "formulary": "Premium Formulary",
+      "utilizationManagementBundleSelection": "Standard UM",
+      "retailNetwork": "Broad Retail Network",
+      "maintenancePharmacyNetwork": "Standard Retail Network",
+      "specialtyPharmacyNetwork": "Exclusive Specialty Network",
+      "specialtyDaysSupply": "30 Days Supply",
+      "discountAndRebateType": "Traditional",
+      "pricingTier": "Tier 1",
+      "limitedDistributionRebatesAllocation": "Specialty Rebate",
+      "hivRebatesAllocation": "Retail Rebate",
+      "rebateGuaranteeReconcilationMethod": "MediSpan MONY Code",
+      "decrementedRate": "1.5%",
+      "coPayTiers": "3-Tier",
+      "employerGroupWaiverPlan": "No",
+      "stopLossPricing": "No",
+      "inHousePharmacy": "No"
+    },
+    "values": {
+      "overallFeeAndCredit": {
+        "pepmRebateCredit": 5.25,
+        "pricingFee": 1.75,
+        "inHousePharmacyFee": null
+      },
+      "retail": {
+        "brand": {
+          "discount": 19.85,
+          "dispensingFee": 0.45,
+          "rebate": 350
+        },
+        "generic": {
+          "discount": 87.15,
+          "dispensingFee": 0.45
+        }
+      },
+      "retail90": {
+        "brand": {
+          "discount": 22.50,
+          "dispensingFee": null,
+          "rebate": 900
+        },
+        "generic": {
+          "discount": 88.60,
+          "dispensingFee": null
+        }
+      },
+      "maintenance": {
+        "brand": {
+          "discount": 20.35,
+          "dispensingFee": 0.35,
+          "rebate": 360
+        },
+        "generic": {
+          "discount": 86.85,
+          "dispensingFee": 0.35
+        }
+      },
+      "mail": {
+        "brand": {
+          "discount": 21.00,
+          "dispensingFee": null,
+          "rebate": 910
+        },
+        "generic": {
+          "discount": 91.00,
+          "dispensingFee": null
+        }
+      },
+      "specialtyMail": {
+        "brand": {
+          "discount": 23.75,
+          "dispensingFee": 0.35,
+          "rebate": 990
+        },
+        "generic": {
+          "discount": 86.85,
+          "dispensingFee": 0.35
+        }
+      },
+      "specialtyRetail": {
+        "brand": {
+          "discount": 22.35,
+          "dispensingFee": null,
+          "rebate": 990
+        },
+        "generic": {
+          "discount": 92.00,
+          "dispensingFee": null
+        }
+      },
+      "limitedDistributionMail": {
+        "brand": {
+          "discount": null,
+          "dispensingFee": null,
+          "rebate": null
+        },
+        "generic": {
+          "discount": null,
+          "dispensingFee": null
+        }
+      },
+      "limitedDistributionRetail": {
+        "brand": {
+          "discount": null,
+          "dispensingFee": null,
+          "rebate": null
+        },
+        "generic": {
+          "discount": null,
+          "dispensingFee": null
+        }
+      },
+      "blendedSpecialty": {
+        "ldd": {
+          "discount": 16.10,
+          "dispensingFee": null,
+          "rebate": 3550
+        },
+        "nonLdd": {
+          "discount": 23.00,
+          "dispensingFee": null,
+          "rebate": 3550
+        }
+      }
+    }
+  }

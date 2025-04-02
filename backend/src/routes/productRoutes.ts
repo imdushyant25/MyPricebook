@@ -1,15 +1,21 @@
 // src/routes/productRoutes.ts
+
 // Routes for product management operations
 import express from 'express';
 import * as productController from '../controllers/productController';
 
 const router = express.Router();
 
-// TODO: Implement product routes
-// Example:
-// router.get('/', productController.getProducts);
-// router.get('/:id', productController.getProductById);
-// router.post('/', productController.createProduct);
-// router.put('/:id', productController.updateProduct);
+// Get all products
+router.get('/', productController.getProducts);
+
+// Get product by ID
+router.get('/:productId', productController.getProductById);
+
+// Create new product
+router.post('/', productController.createProduct);
+
+// Update product
+router.put('/:productId', productController.updateProduct);
 
 export default router;
