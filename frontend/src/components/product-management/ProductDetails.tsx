@@ -376,8 +376,16 @@ const ProductDetails: React.FC = () => {
   // Check if product is active
   const isActive = () => {
     const now = new Date();
+    now.setHours(12, 0, 0, 0); // Normalize current date to noon
+    
     const effectiveDate = new Date(product.metadata.effectiveDate);
-    const expiryDate = product.metadata.expiryDate ? new Date(product.metadata.expiryDate) : null;
+    effectiveDate.setHours(12, 0, 0, 0); // Normalize effective date to noon
+    
+    let expiryDate = null;
+    if (product.metadata.expiryDate) {
+      expiryDate = new Date(product.metadata.expiryDate);
+      expiryDate.setHours(12, 0, 0, 0); // Normalize expiry date to noon
+    }
     
     return now >= effectiveDate && (!expiryDate || now <= expiryDate);
   };

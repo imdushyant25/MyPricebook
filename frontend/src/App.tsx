@@ -6,6 +6,7 @@ import FileManagement from './pages/FileManagement';
 import FileResultsPage from './pages/FileResultsPage';
 import ProductManagement from './pages/ProductManagement';
 import ProductDetails from './components/product-management/ProductDetails';
+import ProductEdit from './components/product-management/ProductEdit';
 import Layout from './components/common/Layout';
 
 const App: React.FC = () => {
@@ -20,6 +21,7 @@ const App: React.FC = () => {
             <Route path="/files/:fileId/results" element={<FileResultsPage />} />
             <Route path="/products" element={<ProductManagement />} />
             <Route path="/products/:productId" element={<ProductDetails />} />
+            <Route path="/products/:productId/edit" element={<ProductEdit />} />
           </Routes>
         </Layout>
       </Router>
